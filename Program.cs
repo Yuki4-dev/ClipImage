@@ -25,8 +25,7 @@ class Program
         }
         catch (Exception e)
         {
-            UI.ShowError("予期せぬエラーが発生しました。");
-            UI.ShowError(e.Message);
+            UI.ShowError("予期せぬエラーが発生しました。" + e.Message);
             UI.ShowError(e.StackTrace ?? "");
         }
         finally
@@ -41,7 +40,7 @@ class Program
         if (!content.Contains(StandardDataFormats.Bitmap))
         {
             UI.ShowError("クリップボードに画像データが存在しません。");
-            //return;
+            return;
         }
 
         if (!UI.ShowSaveFiledialog(location, out var filePath))
