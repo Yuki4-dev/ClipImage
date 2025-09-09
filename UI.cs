@@ -20,7 +20,7 @@ namespace ClipImage
             var hr = NativeMethods.CoInitializeEx(IntPtr.Zero, NativeMethods.COINIT_APARTMENTTHREADED);
             if (hr < 0)
             {
-                Console.Error.WriteLine("初期化に失敗しました。" + hr.ToString("X8"));
+                Console.Error.WriteLine($"初期化に失敗しました。{hr:X8}");
                 return false;
             }
             return true;
@@ -34,7 +34,6 @@ namespace ClipImage
         public static bool ShowSaveFiledialog(string location, out string dest)
         {
             dest = string.Empty;
-
             var hr = NativeMethods.CoCreateInstance(
                 new Guid(ShellGUID.CLSID_FileSaveDialog),
                 IntPtr.Zero,
@@ -57,26 +56,23 @@ namespace ClipImage
                     new Guid(ShellGUID.IID_IShellItem),
                     out initialFolderItem
                 );
-                dest = ShowSaveFiledialoginternal(dialog, initialFolderItem);
-                return dest != string.Empty;
+                dest = ShowSaveFileDialogInternal(dialog, initialFolderItem);
+                return !string.IsNullOrEmpty(dest);
             }
-
             catch (Exception ex)
             {
-                ShowError("保存ダイアログの表示に失敗しました。" + ex.Message);
+                ShowError($"保存ダイアログの表示に失敗しました。{ex.Message}");
                 return false;
             }
             finally
             {
                 Marshal.ReleaseComObject(dialog);
                 if (initialFolderItem != null)
-                {
                     Marshal.ReleaseComObject(initialFolderItem);
-                }
             }
         }
 
-        private static string ShowSaveFiledialoginternal(IFileSaveDialog dialog, IShellItem initialFolderItem)
+        private static string ShowSaveFileDialogInternal(IFileSaveDialog dialog, IShellItem initialFolderItem)
         {
             dialog.SetTitle("保存場所を選択");
             dialog.SetDefaultFolder(initialFolderItem);
@@ -84,35 +80,29 @@ namespace ClipImage
 
             var filters = new[]
             {
-                new COMDLG_FILTERSPEC() { pszName = "PNG (*.png)", pszSpec = "*.png" },
-                new COMDLG_FILTERSPEC() { pszName = "JPEG (*.jpg;*.jpeg)", pszSpec = "*.jpg;*.jpeg" },
-                new COMDLG_FILTERSPEC() { pszName = "すべて (*.*)", pszSpec = "*.*" },
+                new COMDLG_FILTERSPEC { pszName = "PNG (*.png)", pszSpec = "*.png" },
+                new COMDLG_FILTERSPEC { pszName = "JPEG (*.jpg;*.jpeg)", pszSpec = "*.jpg;*.jpeg" },
+                new COMDLG_FILTERSPEC { pszName = "すべて (*.*)", pszSpec = "*.*" },
             };
             dialog.SetFileTypes((uint)filters.Length, filters);
 
             if (dialog.Show(IntPtr.Zero) != 0)
-            {
                 return string.Empty;
-            }
 
             IntPtr pPath = IntPtr.Zero;
             IShellItem? result = null;
             try
             {
                 dialog.GetResult(out result);
-                result.GetDisplayName(SIGDN.SIGDN_FILESYSPATH, out pPath);
+                result.GetDisplayName(SIGDN.FILESYSPATH, out pPath);
                 return Marshal.PtrToStringUni(pPath) ?? string.Empty;
             }
             finally
             {
                 if (pPath != IntPtr.Zero)
-                {
                     Marshal.FreeHGlobal(pPath);
-                }
                 if (result != null)
-                {
                     Marshal.ReleaseComObject(result);
-                }
             }
         }
     }
